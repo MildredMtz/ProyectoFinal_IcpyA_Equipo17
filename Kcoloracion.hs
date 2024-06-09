@@ -1,86 +1,40 @@
+-- kcoloracion.hs
+
+-- Declaramos el módulo Kcoloracion y los elementos que exporta.
 module Kcoloracion where
 
-import SAT.MiniSat 
+-- Importamos el módulo SAT.MiniSat para trabajar con fórmulas SAT.
+import SAT.MiniSat (Formula(..), solve)
+
+-- Importamos el módulo Data.Map y lo calificamos como Map para evitar conflictos de nombres.
 import qualified Data.Map as Map
+-- Importamos el tipo Map desde Data.Map.
 import Data.Map (Map)
-import qualified Data.Set as Set
-import Data.Set (Set)
-import Data.Maybe (catMaybes)
-import Data.List (findIndex)
 
-
-
+-- Definimos un tipo alias Vertice para representar vértices.
 type Vertice = Int
+-- Definimos un tipo alias Arista para representar aristas (pares de vértices).
 type Arista = (Vertice, Vertice)
+-- Definimos un tipo alias Grafica que es una lista de vértices y una lista de aristas.
 type Grafica = ([Vertice], [Arista])
--- type Color = Int
-type Coloracion = [(Vertice, Int)]
--- type Coloracion = [(Vertice, Color)]
+-- Definimos un tipo alias Color para representar colores.
+type Color = Int
+-- Definimos un tipo alias Coloracion para representar una asignación de colores a vértices.
+type Coloracion = Map Vertice Color
 
--- Función para crear una gráfica vacía
-crearGraficaVacia :: Grafica
-crearGraficaVacia = ([], [])
+-- Función que convierte un problema de k-coloración en una fórmula SAT.
+kColoracionFormula :: Int -> Grafica -> Formula (Vertice, Color)
+kColoracionFormula k (vertices, aristas) = All (
+    -- Cada vértice debe tener exactamente un color.
+    [ExactlyOne [Var (v, c) | c <- [1..k]] | v <- vertices] ++
+    -- Dos vértices adyacentes no pueden tener el mismo color.
+    [Not (Var (v, c)) :||: Not (Var (u, c)) | (v, u) <- aristas, c <- [1..k]]
+    )
 
--- Función para crear una gráfica vacía que solo contenga vértices, pero no aristas 
-crearGrafica :: Int -> Grafica
-crearGrafica n = ([1..n], [])
-
--- Función para agregar una arista a la gráfica
-agregarArista :: Arista -> Grafica -> Grafica
-agregarArista arista (vertices, aristas) = (vertices, arista : aristas)
-
--- Función para obtener los vértices de la gráfica
-obtenerVertices :: Grafica -> [Vertice]
-obtenerVertices (vertices, _) = vertices
-
--- Función para obtener las aristas de la gráfica
-obtenerAristas :: Grafica -> [Arista]
-obtenerAristas (_, aristas) = aristas
-
-
--- Generar la fórmula proposicional
-generarFormula :: Int -> [Vertice] -> [Arista] -> [[Int]]
-generarFormula k vertices aristas = concat
-    [ -- Cada vértice tiene al menos un color
-      [[x i j | j <- [1..k]] | i <- vertices]
-    , -- Cada vértice tiene a lo sumo un color
-      [[-x i j, -x i l] | i <- vertices, j <- [1..k], l <- [j+1..k]]
-    , -- Vértices adyacentes tienen diferentes colores
-      [[-x u j, -x v j] | (u, v) <- aristas, j <- [1..k]]
-    ]
-  where
-    x i j = (i - 1) * k + j
-
--- Función para resolver la fórmula usando MiniSat
-resolverSAT :: [[Int]] -> IO [[Int]]
-resolverSAT formula = solve formula
-
-
--- Función para construir las k-coloraciones a partir de la solución del SAT solver
-construirColoraciones :: Int -> Grafica -> [[Int]] -> [[Coloracion]]
-construirColoraciones k grafica soluciones = map (construirColoracion k vertices) soluciones
-  where
-    vertices = obtenerVertices grafica
-
--- Función para construir una k-coloración a partir de una solución SAT
-construirColoracion :: Int -> [Vertice] -> [Int] -> Coloracion
-construirColoracion k vertices solucion = catMaybes [buscarColor v solucion | v <- vertices]
-  where
-    buscarColor v sol = findIndex (\i -> c v i `elem` sol) [1..k]
-    c i j = (i - 1) * k + j
-
--- Función para obtener todas las k-coloraciones de una gráfica
-kColoracion :: Int -> Grafica -> IO [[Coloracion]]
-kColoracion k grafica = do
-    let vertices = obtenerVertices grafica
-        aristas = obtenerAristas grafica
-        formula = generarFormula k (length vertices) aristas
-    solucionesSAT <- resolverSAT formula
-    return $ construirColoraciones k grafica solucionesSAT
-
-
-
-
-
-
-
+-- Función que resuelve el problema de k-coloración utilizando el solucionador SAT.
+solveKcoloracion :: Int -> Grafica -> Maybe Coloracion
+solveKcoloracion k grafica = case solve (kColoracionFormula k grafica) of
+    -- Si hay una solución, la convertimosa un formato legible.
+    Just solMap -> Just $ Map.fromList [(v, c) | ((v, c), True) <- Map.toList solMap]
+    -- Si no hay solución, devolvemos Nothing.
+    Nothing -> Nothing
