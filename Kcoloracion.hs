@@ -1,18 +1,13 @@
---module Kcoloracion (
- --   Grafica,
-  --  Coloracion,
-  --  crearGrafica,
-  --  agregarArista,
-  --  kColoracion
---) where
-
 module Kcoloracion where
 
+import SAT.MiniSat 
 import qualified Data.Map as Map
 import Data.Map (Map)
 import qualified Data.Set as Set
 import Data.Set (Set)
-import System.Process (callCommand)
+import Data.Maybe (catMaybes)
+import Data.List (findIndex)
+
 
 
 type Vertice = Int
@@ -22,23 +17,26 @@ type Grafica = ([Vertice], [Arista])
 type Coloracion = [(Vertice, Int)]
 -- type Coloracion = [(Vertice, Color)]
 
+-- Función para crear una gráfica vacía
+crearGraficaVacia :: Grafica
+crearGraficaVacia = ([], [])
 
-
--- Crear una gráfica vacía
+-- Función para crear una gráfica vacía que solo contenga vértices, pero no aristas 
 crearGrafica :: Int -> Grafica
 crearGrafica n = ([1..n], [])
 
--- Agregar una arista a una gráfica
+-- Función para agregar una arista a la gráfica
 agregarArista :: Arista -> Grafica -> Grafica
 agregarArista arista (vertices, aristas) = (vertices, arista : aristas)
 
+-- Función para obtener los vértices de la gráfica
+obtenerVertices :: Grafica -> [Vertice]
+obtenerVertices (vertices, _) = vertices
 
--- Paso 4: Definir la función kColoracion
-kColoracion :: Int -> Grafica -> [[Coloracion]]
-kColoracion k (vertices, aristas) = let
-    formulas = generarFormula k vertices aristas
-    solucionesSAT = resolverSAT formulas
-    in map (construirColoracion vertices k) solucionesSAT
+-- Función para obtener las aristas de la gráfica
+obtenerAristas :: Grafica -> [Arista]
+obtenerAristas (_, aristas) = aristas
+
 
 -- Generar la fórmula proposicional
 generarFormula :: Int -> [Vertice] -> [Arista] -> [[Int]]
@@ -53,27 +51,36 @@ generarFormula k vertices aristas = concat
   where
     x i j = (i - 1) * k + j
 
+-- Función para resolver la fórmula usando MiniSat
+resolverSAT :: [[Int]] -> IO [[Int]]
+resolverSAT formula = solve formula
 
--- Resolver la fórmula usando MiniSat
-resolverSAT :: [[Int]] -> [[Int]]
-resolverSAT formula = unsafePerformIO $ do
-    (inp, out, err, pid) <- runInteractiveProcess "minisat" [] Nothing Nothing
-    hPutStr inp (unlines (map (unwords . map show) formula ++ [""]))
-    hClose inp
-    output <- hGetContents out
-    return (parseOutput output)
+
+-- Función para construir las k-coloraciones a partir de la solución del SAT solver
+construirColoraciones :: Int -> Grafica -> [[Int]] -> [[Coloracion]]
+construirColoraciones k grafica soluciones = map (construirColoracion k vertices) soluciones
   where
-    parseOutput output = case lines output of
-        ("SAT":solution:_) -> [map read (words solution)]
-        _ -> []
+    vertices = obtenerVertices grafica
+
+-- Función para construir una k-coloración a partir de una solución SAT
+construirColoracion :: Int -> [Vertice] -> [Int] -> Coloracion
+construirColoracion k vertices solucion = catMaybes [buscarColor v solucion | v <- vertices]
+  where
+    buscarColor v sol = findIndex (\i -> c v i `elem` sol) [1..k]
+    c i j = (i - 1) * k + j
+
+-- Función para obtener todas las k-coloraciones de una gráfica
+kColoracion :: Int -> Grafica -> IO [[Coloracion]]
+kColoracion k grafica = do
+    let vertices = obtenerVertices grafica
+        aristas = obtenerAristas grafica
+        formula = generarFormula k (length vertices) aristas
+    solucionesSAT <- resolverSAT formula
+    return $ construirColoraciones k grafica solucionesSAT
 
 
--- Construir la k-coloración a partir de la solución del SAT solver
-construirColoracion :: [Vertice] -> Int -> [Int] -> Coloracion
-construirColoracion vertices k solucion = catMaybes $ do
-    vertice <- vertices
-    let colores = [1..k]
-    return $ asum $ map (\color -> if (vertice - 1) * k + color `elem` solucion then Just (vertice, color) else Nothing) colores
 
 
--- IMPLEMENTAR FUNCION K-Coloracion
+
+
+

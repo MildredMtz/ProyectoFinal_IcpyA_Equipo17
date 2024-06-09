@@ -1,5 +1,5 @@
 module Main where
-
+import SAT.MiniSat
 import Kcoloracion
 
 main :: IO ()
