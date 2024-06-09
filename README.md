@@ -19,7 +19,7 @@ Debido a la versión que tenemos de ghc, la biblioteca SAT no es compatible, per
 ## Descripción General 
 
 En este proyecto se pretende la implementación de un solucionador del problema de la k-coloración de gráficas en Haskell, utilizando un solucionador SAT (problema de satisfacibilidad booleana) para encontrar soluciones de manera eficiente.
-La idea principal gira en torno a convertir el el problema de la coloración de gráficas en un problema SAT, donde las restricciones del mismo se traducen en fórmulas lógicas. 
+La idea principal gira en torno a convertir el problema de la coloración de gráficas en un problema SAT, donde las restricciones del mismo se traducen en fórmulas lógicas. 
 Estas fórmulas se alimentan luego a un solucionador SAT, que verifica la satisfacibilidad y devuelve una solución que satisface todas las restricciones dadas si existe una. 
 
 Es importante recalcar que, este corresponde a un problema NP-completo, lo cual significa que no se ha encontrado hasta el momento un algoritmo que nos permita obtener una respuesta óptima, sino, buenas aproximaciones, que, aunque se pulen cada vez más, no se puede demostrar que sea la forma más óptima de su resolución.
@@ -28,7 +28,7 @@ Es importante recalcar que, este corresponde a un problema NP-completo, lo cual 
 
 ### Kcoloracion.hs
 
-El módulo "Kcoloracion.hs" es es donde reside la lógica principal para transformar una gráfica coloreable en un problema SAT. Los componentes clave de este módulo incluyen:
+El módulo "Kcoloracion.hs" es en donde reside la lógica principal para transformar una gráfica coloreable en un problema SAT. Los componentes clave de este módulo incluyen:
 
 - **Tipos de Datos**:
 - **Tipos de Datos**:
