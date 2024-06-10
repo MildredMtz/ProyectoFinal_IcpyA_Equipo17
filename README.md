@@ -8,6 +8,13 @@ López Villalba Cielo           - 422050461
 
 ## COLORACIÓN DE GRÁFICAS - PROBLEMA DE LA K-COLORACIÓN DE GRÁFICAS
 
+### Ejecución
+Para ejecutar el programa, hay que situarse en la carpeta 
+    ProyectoFinal_IcpyA_Equipo17
+Abrir la terminal y ejecutar con el siguiente comando:
+    $ runhaskell Main
+
+
 ## Consideraciones importantes
 Para ejecutar este proyecto, es necesario contar con :
 
