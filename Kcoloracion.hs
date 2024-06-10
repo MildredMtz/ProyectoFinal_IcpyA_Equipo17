@@ -1,6 +1,9 @@
--- kcoloracion.hs
+-- Declaramos el módulo Kcoloracion
 
--- Declaramos el módulo Kcoloracion y los elementos que exporta.
+-- Este módulo define los tipos y funciones necesarios, representa una gráfica y 
+-- resolver el problema de k-coloración utilizando un solucionador SAT. 
+-- Proporciona funciones para convertir un problema de k-coloración en una fórmula SAT.
+
 module Kcoloracion where
 
 -- Importamos el módulo SAT.MiniSat para trabajar con fórmulas SAT.
@@ -11,18 +14,19 @@ import qualified Data.Map as Map
 -- Importamos el tipo Map desde Data.Map.
 import Data.Map (Map)
 
--- Definimos un tipo alias Vertice para representar vértices.
+-- Tipo Vertice, representa vértices.
 type Vertice = Int
--- Definimos un tipo alias Arista para representar aristas (pares de vértices).
+-- Tipo Arista, representa aristas (pares de vértices).
 type Arista = (Vertice, Vertice)
--- Definimos un tipo alias Grafica que es una lista de vértices y una lista de aristas.
+-- Tipo Grafica que es una lista de vértices y una lista de aristas.
 type Grafica = ([Vertice], [Arista])
--- Definimos un tipo alias Color para representar colores.
+-- Tipo Color, representa colores.
 type Color = Int
--- Definimos un tipo alias Coloracion para representar una asignación de colores a vértices.
+-- Tipo Coloracion, representa una asignación de colores a vértices.
 type Coloracion = Map Vertice Color
 
--- Función que convierte un problema de k-coloración en una fórmula SAT.
+-- Función que convierte un problema de k-coloración en una fórmula SAT,
+-- para la cual recibe el número de colores (k) y una gráfica, y devuelve una fórmula SAT.
 kColoracionFormula :: Int -> Grafica -> Formula (Vertice, Color)
 kColoracionFormula k (vertices, aristas) = All (
     -- Cada vértice debe tener exactamente un color.
@@ -31,10 +35,10 @@ kColoracionFormula k (vertices, aristas) = All (
     [Not (Var (v, c)) :||: Not (Var (u, c)) | (v, u) <- aristas, c <- [1..k]]
     )
 
--- Función que resuelve el problema de k-coloración utilizando el solucionador SAT.
+-- Función que resuelve el problema de k-coloración utilizando el solucionador SAT,
+-- para lo cual recibe el número de colores (k) y una gráfica, posteriormente devuelve una posible coloración,
+-- o Nothing si no es posible encontrar una k-coloración.
 solveKcoloracion :: Int -> Grafica -> Maybe Coloracion
 solveKcoloracion k grafica = case solve (kColoracionFormula k grafica) of
-    -- Si hay una solución, la convertimosa un formato legible.
     Just solMap -> Just $ Map.fromList [(v, c) | ((v, c), True) <- Map.toList solMap]
-    -- Si no hay solución, devolvemos Nothing.
     Nothing -> Nothing
